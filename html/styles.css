@@ -1,0 +1,47 @@
+body {
+    font-family: "Courier New", sans-serif;
+    text-align: center;
+    font-size: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 5fr 1fr;
+    grid-template-areas:"lt ct rt"
+                        "lm cm rm"
+                        "lb cb rb";
+    grid-gap: 1em;
+    margin-top: 1em;
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+header {
+    grid-area: ct;
+}
+.buttons {
+    grid-area: lt / lm / lb;
+    font-size: 10em;
+    justify-content: center;
+}
+button {
+    padding: 2rem;
+    margin: 2rem;
+    border: medium solid;
+    min-height: 1em;
+    min-width: 1em;
+}
+.red {
+    color: red;
+}
+.green {
+    color: green;
+}
+.canvas {
+    grid-area: cm;
+}   
+canvas {
+    background: blueviolet;
+}
+
+.state {
+    grid-area: lb / cb / rb;
+    font-size: 2em;
+}

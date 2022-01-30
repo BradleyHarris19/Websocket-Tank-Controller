@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>websocket demo</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <header>
+            <h1>Tank Controller</h1>
+        </header>
+        <div class="buttons">
+            <button class="red">Red!</button>
+            <button class="green">Green!</button>
+        </div>
+        <div class="canvas">
+            <canvas width="600" height="600"></canvas>
+        </div>
+        <div class="state">
+            <p>Connected</p>
+        </div>  
+        <script type="text/javascript" charset="utf-8">
+            let lightState 
+            let stateindicator = document.querySelector('.state')
+            let redbutton = document.querySelector('.red')
+            let greenbutton = document.querySelector('.green')
+            let defultbuttonbackground = 'rgb(235, 235, 235)'
+
+            let canvas;
+            let context;
+            let half;
+
+            let requestid;
+            let fpsInterval=1000/144;
+            let now;
+            let then=Date.now();
+
+            let dot = {
+                x: 300, 
+                y: 300,
+                size: 15
+            }
+            let mouse = {
+                x: 0,
+                y: 0
+            }
+
+            websocket = new WebSocket("ws://192.168.1.142:6789/");
+            
+            websocket.onopen = function(e) {
+                stateindicator.innerHTML = 'Connection established';
+                stateindicator.style.backgroundColor = 'green';
+            };
+
+            document.querySelector('.red').onclick = function (event) {
+                lightState.red = !lightState.red
+                if (lightState.red){
+                    redbutton.style.backgroundColor = '#ff000030';
+                } else {
+                    redbutton.style.backgroundColor = defultbuttonbackground
+                }
+                websocket.send(JSON.stringify(lightState));
+                
+                console.log(lightState);
+            }
+            document.querySelector('.green').onclick = function (event) {
+                lightState.green = !lightState.green
+                if (lightState.green){
+                    greenbutton.style.backgroundColor = '#00900030';
+                } else {
+                    greenbutton.style.backgroundColor = defultbuttonbackground
+                }
+                websocket.send(JSON.stringify(lightState));
+                
+                console.log(lightState);
+            }
+            
+            websocket.onmessage = function(event) {
+                lightState = JSON.parse(event.data);
+                console.log(lightState);
+            };
+
+            websocket.onerror = function(error) {
+                alert(`[error] ${error.message}`);
+            };
+
+            websocket.onclose = function(e) {
+                stateindicator.innerHTML = 'Connection closed';
+                stateindicator.style.backgroundColor = 'red';
+            };
+
+        document.addEventListener('DOMContentLoaded', init, false);
+        
+        var active = false;
+
+        function init() {
+            canvas=document.querySelector('canvas');
+            context=canvas.getContext('2d');
+
+            half = canvas.width/2;
+
+            console.log(canvas.getBoundingClientRect().top);
+            console.log(canvas.getBoundingClientRect().left);
+
+            canvas.addEventListener("touchstart", dragStart, false);
+            canvas.addEventListener("touchend", dragEnd, false);
+            canvas.addEventListener("touchmove", drag, false);
+
+            canvas.addEventListener("mousedown", dragStart, false);
+            canvas.addEventListener("mouseup", dragEnd, false);
+            canvas.addEventListener("mousemove", drag, false);
+
+            draw();
+        }
+
+        function draw() {
+            window.requestAnimationFrame(draw);
+            let now=Date.now()
+            let elapsed=now-then;
+            if (elapsed<=fpsInterval){
+                return;
+            }
+            then=now-(elapsed%fpsInterval);
+            
+            context.clearRect(0,0,canvas.width, canvas.height);
+
+            context.beginPath();
+            context.fillStyle = "black";
+            context.arc(dot.x, dot.y, dot.size, 0, 2 * Math.PI);
+            context.fill();
+        }
+
+        function randint(min, max) {
+            return Math.round(Math.random()*(max-min))+min;
+        }
+
+        function dragStart(e) {
+            active = true;
+        }
+        function dragEnd(e) {
+            dot.x = half;
+            dot.y = half;
+            active = false;
+            console.log("centered");
+        }
+        function drag(e) {
+            if (active) {
+                e.preventDefault();
+                if (e.type === "touchmove") {
+                dot.x = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+                dot.y = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+                } else {
+                dot.x = e.clientX - canvas.getBoundingClientRect().left;
+                dot.y = e.clientY - canvas.getBoundingClientRect().top;
+                }
+                ensureXIsInCanvas(dot);
+                lightState.x = dot.x;
+                lightState.y = dot.y;
+                websocket.send(JSON.stringify(lightState));
+            }
+        }
+        function ensureXIsInCanvas(d){
+            if (d.x < 0){
+                d.x = 0;
+            }
+            if (d.y < 0){
+                d.y = 0;
+            }
+            if (d.x > canvas.width){
+                d.x = canvas.width;
+            }
+            if (d.y > canvas.height){
+                d.y = canvas.height
+            }
+        }
+        </script>
+    </body>
+</html>
